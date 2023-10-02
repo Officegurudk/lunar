@@ -14,14 +14,18 @@ trait HasChannels
 {
     public static function bootHasChannels()
     {
+        if (!config("lunar.features.channels", true)) {
+            return;
+        }
+
         static::created(function (Model $model) {
             // Add our initial channels, set to not be enabled or scheduled.
             $channels = Channel::get()->mapWithKeys(function ($channel) {
                 return [
                     $channel->id => [
-                        'enabled' => false,
-                        'starts_at' => null,
-                        'ends_at' => null,
+                        "enabled" => false,
+                        "starts_at" => null,
+                        "ends_at" => null,
                     ],
                 ];
             });
@@ -37,33 +41,37 @@ trait HasChannels
      */
     public function channels()
     {
-        $prefix = config('lunar.database.table_prefix');
+        $prefix = config("lunar.database.table_prefix");
 
         return $this->morphToMany(
             Channel::class,
-            'channelable',
+            "channelable",
             "{$prefix}channelables"
-        )->withPivot([
-            'enabled',
-            'starts_at',
-            'ends_at',
-        ])->withTimestamps();
+        )
+            ->withPivot(["enabled", "starts_at", "ends_at"])
+            ->withTimestamps();
     }
 
-    public function scheduleChannel($channel, DateTime $startsAt = null, DateTime $endsAt = null)
-    {
+    public function scheduleChannel(
+        $channel,
+        DateTime $startsAt = null,
+        DateTime $endsAt = null
+    ) {
         if ($channel instanceof Model) {
             $channel = collect([$channel]);
         }
 
         DB::transaction(function () use ($channel, $startsAt, $endsAt) {
             $this->channels()->sync(
-                $channel->mapWithKeys(function ($channel) use ($startsAt, $endsAt) {
+                $channel->mapWithKeys(function ($channel) use (
+                    $startsAt,
+                    $endsAt
+                ) {
                     return [
                         $channel->id => [
-                            'enabled' => true,
-                            'starts_at' => $startsAt,
-                            'ends_at' => $endsAt,
+                            "enabled" => true,
+                            "starts_at" => $startsAt,
+                            "ends_at" => $endsAt,
                         ],
                     ];
                 })
@@ -78,13 +86,16 @@ trait HasChannels
      */
     public function activeChannels()
     {
-        return $this->channels()->where(function ($query) {
-            $query->whereNull('starts_at')
-                ->orWhere('starts_at', '<=', now());
-        })->where(function ($query) {
-            $query->whereNull('ends_at')
-                ->orWhere('ends_at', '>=', now());
-        })->whereEnabled(true);
+        return $this->channels()
+            ->where(function ($query) {
+                $query
+                    ->whereNull("starts_at")
+                    ->orWhere("starts_at", "<=", now());
+            })
+            ->where(function ($query) {
+                $query->whereNull("ends_at")->orWhere("ends_at", ">=", now());
+            })
+            ->whereEnabled(true);
     }
 
     /**
@@ -94,17 +105,21 @@ trait HasChannels
      * @param  Channel|iterable  $channel
      * @return Builder
      */
-    public function scopeChannel($query, Channel|iterable $channel = null, DateTime $startsAt = null, DateTime $endsAt = null)
-    {
+    public function scopeChannel(
+        $query,
+        Channel|iterable $channel = null,
+        DateTime $startsAt = null,
+        DateTime $endsAt = null
+    ) {
         if (blank($channel)) {
             return $query;
         }
 
-        if (! $startsAt) {
+        if (!$startsAt) {
             $startsAt = now();
         }
 
-        if (! $endsAt) {
+        if (!$endsAt) {
             $endsAt = now()->addSecond();
         }
 
@@ -115,24 +130,34 @@ trait HasChannels
         }
 
         if (is_a($channel, Collection::class)) {
-            $channelIds = $channel->pluck('id');
+            $channelIds = $channel->pluck("id");
         }
 
         if (is_array($channel)) {
-            $channelIds = collect($channel)->pluck('id');
+            $channelIds = collect($channel)->pluck("id");
         }
 
-        return $query->whereHas('channels', function ($relation) use ($channelIds, $startsAt, $endsAt) {
-            $relation->whereIn(
-                $this->channels()->getTable().'.channel_id',
-                $channelIds
-            )->where(function ($query) use ($startsAt) {
-                $query->whereNull('starts_at')
-                    ->orWhere('starts_at', '<=', $startsAt);
-            })->where(function ($query) use ($endsAt) {
-                $query->whereNull('ends_at')
-                    ->orWhere('ends_at', '>=', $endsAt);
-            })->whereEnabled(true);
+        return $query->whereHas("channels", function ($relation) use (
+            $channelIds,
+            $startsAt,
+            $endsAt
+        ) {
+            $relation
+                ->whereIn(
+                    $this->channels()->getTable() . ".channel_id",
+                    $channelIds
+                )
+                ->where(function ($query) use ($startsAt) {
+                    $query
+                        ->whereNull("starts_at")
+                        ->orWhere("starts_at", "<=", $startsAt);
+                })
+                ->where(function ($query) use ($endsAt) {
+                    $query
+                        ->whereNull("ends_at")
+                        ->orWhere("ends_at", ">=", $endsAt);
+                })
+                ->whereEnabled(true);
         });
     }
 }

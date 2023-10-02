@@ -14,15 +14,19 @@ trait HasUrls
      */
     public static function bootHasUrls()
     {
+        if (!config("lunar.features.urls", true)) {
+            return;
+        }
+
         static::created(function (Model $model) {
-            $generator = config('lunar.urls.generator', null);
+            $generator = config("lunar.urls.generator", null);
             if ($generator) {
                 app($generator)->handle($model);
             }
         });
 
         static::deleted(function (Model $model) {
-            if (! $model->deleted_at) {
+            if (!$model->deleted_at) {
                 $model->urls()->delete();
             }
         });
@@ -33,17 +37,11 @@ trait HasUrls
      */
     public function urls()
     {
-        return $this->morphMany(
-            Url::class,
-            'element'
-        );
+        return $this->morphMany(Url::class, "element");
     }
 
     public function defaultUrl()
     {
-        return $this->morphOne(
-            Url::class,
-            'element'
-        )->whereDefault(true);
+        return $this->morphOne(Url::class, "element")->whereDefault(true);
     }
 }
