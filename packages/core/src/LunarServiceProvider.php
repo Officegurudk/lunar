@@ -239,10 +239,6 @@ class LunarServiceProvider extends ServiceProvider
 
     protected function registerStateListeners()
     {
-        if(config('lunar.database.disable_migrations', false)) {
-            return;
-        }
-
         $states = [
             ConvertProductTypeAttributesToProducts::class,
             EnsureDefaultTaxClassExists::class,

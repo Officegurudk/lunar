@@ -26,7 +26,7 @@ class EnsureMediaCollectionsAreRenamed
 
     protected function shouldRun()
     {
-        return Schema::hasTable('media') && $this->getOutdatedMediaQuery()->count();
+        return Schema::hasTable('media') && Schema::hasColumn('media', 'model_type') && $this->getOutdatedMediaQuery()->count();
     }
 
     /**
