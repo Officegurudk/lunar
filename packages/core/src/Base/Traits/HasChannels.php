@@ -14,7 +14,7 @@ trait HasChannels
 {
     public static function bootHasChannels()
     {
-        if (!config("lunar.features.channels", true)) {
+        if (! config('lunar.features.channels', true)) {
             return;
         }
 

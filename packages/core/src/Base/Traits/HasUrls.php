@@ -14,7 +14,7 @@ trait HasUrls
      */
     public static function bootHasUrls()
     {
-        if (!config("lunar.features.urls", true)) {
+        if (! config('lunar.features.urls', true)) {
             return;
         }
 
