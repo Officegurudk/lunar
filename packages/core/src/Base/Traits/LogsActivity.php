@@ -7,7 +7,18 @@ use Spatie\Activitylog\Traits\LogsActivity as SpatieLogsActivity;
 
 trait LogsActivity
 {
-    use SpatieLogsActivity;
+    use SpatieLogsActivity {
+        bootLogsActivity as spatieBootLogsActivity;
+    }
+
+    protected static function bootLogsActivity(): void
+    {
+        if (!config("lunar.features.activity_log", true)) {
+            return;
+        }
+
+        self::spatieBootLogsActivity();
+    }
 
     /**
      * Get the log options for the activity log.
@@ -15,9 +26,9 @@ trait LogsActivity
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->useLogName('lunar')
+            ->useLogName("lunar")
             ->logAll()
             ->dontSubmitEmptyLogs()
-            ->logExcept(['updated_at']);
+            ->logExcept(["updated_at"]);
     }
 }
